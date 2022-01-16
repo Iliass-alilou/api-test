@@ -1,0 +1,26 @@
+FROM openjdk:11.0.2-jdk-oracle
+
+# Add a volume pointing to /tmp
+# VOLUME /tmp
+
+COPY pom.xml /opt/review-service/build/
+COPY mvnw /opt/review-service/build/
+ADD .mvn /opt/review-service/build/.mvn/
+ADD src /opt/review-service/build/src/
+
+WORKDIR /opt/review-service/build/
+
+RUN ./mvnw clean package
+
+FROM openjdk:11.0.2-jdk-oracle
+# Maven build is mandatory before copying jar file : $ ./mvnw clean package
+
+WORKDIR /opt/review-service/
+
+COPY --from=0 /opt/review-service/build/target/review-service-0.0.1-SNAPSHOT.jar review-service.jar
+
+# Make port 8080 available to the world outside this container
+EXPOSE 8083
+
+# Run the jar file 
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","review-service.jar"]
